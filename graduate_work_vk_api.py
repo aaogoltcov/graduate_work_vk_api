@@ -196,7 +196,6 @@ def main():
     try:
         access_token = '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1'
         person = input(colored('Введите ID пользователя (например, 171691064 или eshmargunov): ', 'blue'))
-        # person = '171691064'
 
         # Вычисление user_id и проверка доступнуости пользователя
         try:
