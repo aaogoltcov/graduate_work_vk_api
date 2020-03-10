@@ -123,17 +123,18 @@ class User:
                             'access_token': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
                             'oauth': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
                             'v': '5.61'}
-                    friends_groups_getting_list = requests.post(url=URL, data=code).json()['response']
+                    friends_groups_getting_list = requests.post(url=URL, data=code).json()
                     code_list = str()
                     person_count = 0
-                    friends_groups_getting.append(friends_groups_getting_list)
+                    friends_groups_getting.append(friends_groups_getting_list['response'])
+
             if person_count < 25 and person_count != 0:
                 code = {'code': f'return [{code_list}];',
                         'access_token': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
                         'oauth': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
                         'v': '5.61'}
-                friends_groups_getting_list = requests.post(url=URL, data=code).json()['response']
-                friends_groups_getting.extend(friends_groups_getting_list)
+                friends_groups_getting_list = requests.post(url=URL, data=code).json()
+                friends_groups_getting.extend(friends_groups_getting_list['response'])
 
             # Очистка списка от групп пользователей, к которым нет доступа
             self.friends_groups = list()
@@ -156,7 +157,6 @@ class User:
             print(colored(f'5. Получено множество из {len(self.person_groups)} групп пользователя.', 'green'))
             return self.person_groups, self.friends_groups
         except TypeError:
-            pass
             raise SystemExit('У пользователя нет групп!')
 
     def groups_get_info(self):
@@ -196,8 +196,8 @@ def main():
     start_time = time.time()
     try:
         access_token = '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1'
-        # person = input(colored('Введите ID пользователя (например, 171691064 или eshmargunov): ', 'blue'))
-        person = '171691064'
+        person = str(input(colored('Введите ID пользователя (например, 171691064 или eshmargunov): ', 'blue')))
+        # person = '171691064'
 
         # Вычисление user_id и проверка доступнуости пользователя
         try:
@@ -207,6 +207,8 @@ def main():
                 person.get_user_id()
                 user_id = int(person.user_id)
                 print(f'Вычислили user_id: {user_id}')
+                person = User(access_token=access_token, user_id=user_id)
+                person.user_checking()
             else:
                 user_id = int(person)
                 person = User(access_token=access_token, user_id=user_id)
