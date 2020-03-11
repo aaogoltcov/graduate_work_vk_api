@@ -79,7 +79,7 @@ class User:
                         if friends_groups_count_list['error']['error_code'] == 6:
                             # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
                             while friends_groups_count_list.keys() == {'error'} and friends_groups_count_list['error']['error_code'] == 6:
-                                self.time_sleep = 0.1
+                                self.time_sleep += 0.4
                                 time.sleep(self.time_sleep)
                                 friends_groups_count_list = requests.post(url=URL, data=code).json()
                             friends_groups_count_list = friends_groups_count_list['response']
@@ -104,7 +104,7 @@ class User:
                         # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
                         while friends_groups_count_list.keys() == {'error'} and friends_groups_count_list['error'][
                             'error_code'] == 6:
-                            self.time_sleep = 0.1
+                            self.time_sleep += 0.4
                             time.sleep(self.time_sleep)
                             friends_groups_count_list = requests.post(url=URL, data=code).json()
                         friends_groups_count_list = friends_groups_count_list['response']
@@ -162,7 +162,7 @@ class User:
                             # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
                             while friends_groups_getting_list.keys() == {'error'} and friends_groups_getting_list['error'][
                                 'error_code'] == 6:
-                                self.time_sleep = 0.1
+                                self.time_sleep += 0.4
                                 time.sleep(self.time_sleep)
                                 friends_groups_getting_list = requests.post(url=URL, data=code).json()
                             pass
@@ -188,7 +188,7 @@ class User:
                         # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
                         while friends_groups_getting_list.keys() == {'error'} and friends_groups_getting_list['error'][
                             'error_code'] == 6:
-                            self.time_sleep = 0.1
+                            self.time_sleep += 0.4
                             time.sleep(self.time_sleep)
                             friends_groups_getting_list = requests.post(url=URL, data=code).json()
                         pass
@@ -232,7 +232,8 @@ class User:
             "code": "var group = %d;"
                     "return {'name': API.groups.getById({'group_id': group})@.name[0], "
                     "'gid': API.groups.getById({'group_id': group})@.id[0], "
-                    "'members_count': API.groups.getMembers({'group_id': group}).count};" % self.group_id,
+                    # "'members_count': API.groups.getMembers({'group_id': group}).count};" % self.group_id,
+                    "'members_count': API.groups.getById({'group_id': group, 'fields': 'members_count'})@.members_count};" % self.group_id,
             'access_token': self.access_token,
             'oauth': self.access_token,
             'v': version
@@ -268,15 +269,15 @@ def main():
         try:
             if not person.isdigit():
                 user_ids = str(person)
-                person = User(access_token, user_ids=user_ids)
+                person = User(access_token, user_ids=user_ids, time_sleep=0.01)
                 person.get_user_id()
                 user_id = int(person.user_id)
                 print(f'Вычислили user_id: {user_id}')
-                person = User(access_token=access_token, user_id=user_id)
+                person = User(access_token=access_token, user_id=user_id, time_sleep=0.01)
                 person.user_checking()
             else:
                 user_id = int(person)
-                person = User(access_token=access_token, user_id=user_id)
+                person = User(access_token=access_token, user_id=user_id, time_sleep=0.01)
                 person.user_checking()
         except KeyError:
             raise SystemExit('Пользователя не существует!')
@@ -284,7 +285,7 @@ def main():
             raise SystemExit('Вы ввели пустое значение!')
 
         # Получение групп пользователя и его друзей
-        groups = User(access_token=access_token, user_id=user_id, friends_groups_list=person.friends_groups_list)
+        groups = User(access_token=access_token, user_id=user_id, friends_groups_list=person.friends_groups_list, time_sleep=0.01)
         groups.person_friends_groups_getting()
         person_groups = groups.person_groups
         friends_groups = groups.friends_groups
