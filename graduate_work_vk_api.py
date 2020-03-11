@@ -9,7 +9,7 @@ from tqdm import tqdm
 class User:
 
     def __init__(self, access_token, user_id=None, user_ids=None, group_name=None, group_id=None, time_sleep=None,
-                 friends_groups=None, person_groups=None, friends_groups_list=None):
+                 friends_groups=None, person_groups=None, friends_groups_list=None, treated_groups_list=None):
         self.access_token = access_token
         self.user_id = user_id
         self.user_ids = user_ids
@@ -19,6 +19,7 @@ class User:
         self.friends_groups = friends_groups
         self.group_name = group_name
         self.friends_groups_list = friends_groups_list
+        self.treated_groups_list = treated_groups_list
 
     def code_params(self):
         return dict(
@@ -227,34 +228,69 @@ class User:
     def groups_get_info(self):
         # Получение информации о группе (имя, id, количество участников)
         URL = "https://api.vk.com/method/execute?"
-        version = '5.61'
-        get_group_name_code = {
-            "code": "var group = %d;"
-                    "return {'name': API.groups.getById({'group_id': group})@.name[0], "
-                    "'gid': API.groups.getById({'group_id': group})@.id[0], "
-                    # "'members_count': API.groups.getMembers({'group_id': group}).count};" % self.group_id,
-                    "'members_count': API.groups.getById({'group_id': group, 'fields': 'members_count'})@.members_count};" % self.group_id,
-            'access_token': self.access_token,
-            'oauth': self.access_token,
-            'v': version
-        }
-        response = requests.post(url=URL, data=get_group_name_code).json()  # ['response']#['items'])
-        if response.keys() == {'error'}:
-            if response['error']['error_code'] == 6:
-                # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
-                while response.keys() == {'error'} and response['error']['error_code'] == 6:
-                    self.time_sleep += 0.4
-                    time.sleep(self.time_sleep)
-                    response = requests.post(url=URL, data=get_group_name_code).json()
-                response = response['response']
+        groups_info_source_code = "API.groups.getById({'group_ids': treated_group, 'fields': 'members_count'})"
+        groups_info = list()
+        code_list = str()
+        group_count = 0
+        for treated_group in tqdm(self.treated_groups_list):
+            treated_group = groups_info_source_code.__str__().replace("treated_group", treated_group.__str__())
+            code_list = treated_group + ', ' + code_list
+            group_count += 1
+            if group_count == 25:
+                code = {'code': f'return [{code_list}];',
+                        'access_token': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
+                        'oauth': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
+                        'v': '5.61'}
+                groups_info_list = requests.post(url=URL, data=code).json()
+                if groups_info_list.keys() == {'error'}:
+                    if groups_info_list['error']['error_code'] == 6:
+                        # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
+                        while groups_info_list.keys() == {'error'} and groups_info_list['error'][
+                            'error_code'] == 6:
+                            self.time_sleep += 0.4
+                            time.sleep(self.time_sleep)
+                            groups_info_list = requests.post(url=URL, data=code).json()
+                        pass
+                    else:
+                        print('Новая ошибка ' + groups_info_list['error']['error_code'],
+                              groups_info_list['error']['error_msg'])
+                        pass
+                    pass
+                else:
+                    pass
+                code_list = str()
+                group_count = 0
+                groups_info.append(groups_info_list['response'])
+        if group_count < 25 and group_count != 0:
+            code = {'code': f'return [{code_list}];',
+                    'access_token': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
+                    'oauth': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
+                    'v': '5.61'}
+            groups_info_list = requests.post(url=URL, data=code).json()
+            if groups_info_list.keys() == {'error'}:
+                if groups_info_list['error']['error_code'] == 6:
+                    # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
+                    while groups_info_list.keys() == {'error'} and groups_info_list['error'][
+                        'error_code'] == 6:
+                        self.time_sleep += 0.4
+                        time.sleep(self.time_sleep)
+                        groups_info_list = requests.post(url=URL, data=code).json()
+                    pass
+                else:
+                    print('Новая ошибка ' + groups_info_list['error']['error_code'],
+                          groups_info_list['error']['error_msg'])
+                    pass
                 pass
             else:
-                print('Новая ошибка ' + response['error']['error_code'], response['error']['error_msg'])
                 pass
-            pass
-        else:
-            response = response['response']
-        self.group_name = response
+            groups_info.append(groups_info_list['response'])
+
+        # Приведение полученной информации к списку со словарем
+        group_info_list = list()
+        for response in groups_info[0]:
+            response = {'gid': response[0]['id'], 'name': response[0]['name'], 'members_count': response[0]['members_count']}
+            group_info_list.append(response)
+        self.group_name = group_info_list
         return self.group_name
 
 
@@ -299,26 +335,18 @@ def main():
         data_for_file_absent = list()
         if len(final_set_of_absent_groups) > 0:
             print(colored('1-й файл - Записываем JSON файл с группами пользотвателя, в которых не состоят его друзья: ', 'blue'))
-            time.sleep(0.03)
             with open('JSON_fiends_absent.json', 'w') as file_absent:
-                for group_id in tqdm(final_set_of_absent_groups):
-                    group_absent = User(access_token=access_token, group_id=group_id, time_sleep=0.01)
-                    group_absent.groups_get_info()
-                    data_for_file_absent.append(group_absent.group_name)
-                file_absent.write(json.dumps(data_for_file_absent, ensure_ascii=False))
+                data_for_file_absent = User(access_token=access_token, treated_groups_list=final_set_of_absent_groups, time_sleep=0.01)
+                file_absent.write(json.dumps(data_for_file_absent.groups_get_info(), ensure_ascii=False))
         else:
             print(colored('1-й файл - Нечего записывать, у пользователя нет групп, в которых не состоят его друзья!', 'red'))
 
         data_for_file_together = list()
         if len(final_set_of_together_groups) > 0:
             print(colored('2-й файл - Записываем JSON файл с группами пользотвателя, в которых состоят его друзья: ', 'blue'))
-            time.sleep(0.03)
             with open('JSON_fiends_together.json', 'w') as file_together:
-                for group_id in tqdm(final_set_of_together_groups):
-                    group_together = User(access_token=access_token, group_id=group_id, time_sleep=0.01)
-                    group_together.groups_get_info()
-                    data_for_file_together.append(group_together.group_name)
-                file_together.write(json.dumps(data_for_file_together, ensure_ascii=False))
+                data_for_file_together = User(access_token=access_token, treated_groups_list=final_set_of_together_groups, time_sleep=0.01)
+                file_together.write(json.dumps(data_for_file_together.groups_get_info(), ensure_ascii=False))
         else:
             print(colored('2-й файл - Нечего записывать, у пользователя нет общих, с его друзьями, групп!', 'red'))
 
