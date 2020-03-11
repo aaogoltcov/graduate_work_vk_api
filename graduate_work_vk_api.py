@@ -1,4 +1,5 @@
 import json
+import sys
 import time
 import requests
 from termcolor import colored
@@ -60,7 +61,8 @@ class User:
             # Получение списка друзей и количества групп для друзей
             print('1. Начинаем получать информацию о друзьях пользователя: ')
             friends_groups_count = list()
-            source_code = "{'user_id': person, 'groups_count': API.users.get({'user_id': person, 'fields': 'counters'})@.counters@.groups[0]}"
+            # source_code = "{'user_id': person, 'groups_count': API.users.get({'user_id': person, 'fields': 'counters'})@.counters@.groups[0]}"
+            source_code = "{'user_id': person, 'groups_count': API.groups.get({'user_id': person}).count}"
             code_list = str()
             person_count = 0
             for person_code in tqdm(friends_list):
@@ -71,8 +73,23 @@ class User:
                     code = {'code': f'return [{code_list}];',
                             'access_token': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
                             'oauth': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
-                            'v': '5.61'}
-                    friends_groups_count_list = requests.post(url=URL, data=code).json()['response']
+                            'v': '5.8'}
+                    friends_groups_count_list = requests.post(url=URL, data=code).json()
+                    if friends_groups_count_list.keys() == {'error'}:
+                        if friends_groups_count_list['error']['error_code'] == 6:
+                            # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
+                            while friends_groups_count_list.keys() == {'error'} and friends_groups_count_list['error']['error_code'] == 6:
+                                self.time_sleep = 0.1
+                                time.sleep(self.time_sleep)
+                                friends_groups_count_list = requests.post(url=URL, data=code).json()
+                            friends_groups_count_list = friends_groups_count_list['response']
+                            pass
+                        else:
+                            print('Новая ошибка ' + friends_groups_count_list['error']['error_code'], friends_groups_count_list['error']['error_msg'])
+                            pass
+                        pass
+                    else:
+                        friends_groups_count_list = friends_groups_count_list['response']
                     code_list = str()
                     person_count = 0
                     friends_groups_count.append(friends_groups_count_list)
@@ -80,10 +97,26 @@ class User:
                 code = {'code': f'return [{code_list}];',
                         'access_token': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
                         'oauth': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
-                        'v': '5.61'}
-                friends_groups_count_list = requests.post(url=URL, data=code).json()['response']
+                        'v': '5.8'}
+                friends_groups_count_list = requests.post(url=URL, data=code).json()
+                if friends_groups_count_list.keys() == {'error'}:
+                    if friends_groups_count_list['error']['error_code'] == 6:
+                        # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
+                        while friends_groups_count_list.keys() == {'error'} and friends_groups_count_list['error'][
+                            'error_code'] == 6:
+                            self.time_sleep = 0.1
+                            time.sleep(self.time_sleep)
+                            friends_groups_count_list = requests.post(url=URL, data=code).json()
+                        friends_groups_count_list = friends_groups_count_list['response']
+                        pass
+                    else:
+                        print('Новая ошибка ' + friends_groups_count_list['error']['error_code'],
+                              friends_groups_count_list['error']['error_msg'])
+                        pass
+                    pass
+                else:
+                    friends_groups_count_list = friends_groups_count_list['response']
                 friends_groups_count.append(friends_groups_count_list)
-
 
             # Разделение списка друзей на списки с суммарным количеством групп не более 1000
             groups_count = 0
@@ -124,6 +157,22 @@ class User:
                             'oauth': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
                             'v': '5.61'}
                     friends_groups_getting_list = requests.post(url=URL, data=code).json()
+                    if friends_groups_getting_list.keys() == {'error'}:
+                        if friends_groups_getting_list['error']['error_code'] == 6:
+                            # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
+                            while friends_groups_getting_list.keys() == {'error'} and friends_groups_getting_list['error'][
+                                'error_code'] == 6:
+                                self.time_sleep = 0.1
+                                time.sleep(self.time_sleep)
+                                friends_groups_getting_list = requests.post(url=URL, data=code).json()
+                            pass
+                        else:
+                            print('Новая ошибка ' + friends_groups_count_list['error']['error_code'],
+                                  friends_groups_count_list['error']['error_msg'])
+                            pass
+                        pass
+                    else:
+                        pass
                     code_list = str()
                     person_count = 0
                     friends_groups_getting.append(friends_groups_getting_list['response'])
@@ -134,6 +183,22 @@ class User:
                         'oauth': '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1',
                         'v': '5.61'}
                 friends_groups_getting_list = requests.post(url=URL, data=code).json()
+                if friends_groups_getting_list.keys() == {'error'}:
+                    if friends_groups_getting_list['error']['error_code'] == 6:
+                        # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
+                        while friends_groups_getting_list.keys() == {'error'} and friends_groups_getting_list['error'][
+                            'error_code'] == 6:
+                            self.time_sleep = 0.1
+                            time.sleep(self.time_sleep)
+                            friends_groups_getting_list = requests.post(url=URL, data=code).json()
+                        pass
+                    else:
+                        print('Новая ошибка ' + friends_groups_count_list['error']['error_code'],
+                              friends_groups_count_list['error']['error_msg'])
+                        pass
+                    pass
+                else:
+                    pass
                 friends_groups_getting.extend(friends_groups_getting_list['response'])
 
             # Очистка списка от групп пользователей, к которым нет доступа
@@ -228,6 +293,7 @@ def main():
         print(colored('6. Вычислили пересечение групп для пользователя и его друзей:', 'green'))
         print(f'-> {len(final_set_of_absent_groups)} групп, в которых нет друзей пользователя')
         print(f'-> {len(final_set_of_together_groups)} групп, в которых есть друзья пользователя')
+        print('Время выполнения до записи файлов - %s секунд(ы).' % round((time.time() - start_time), 2))
 
         data_for_file_absent = list()
         if len(final_set_of_absent_groups) > 0:
@@ -261,7 +327,7 @@ def main():
         raise SystemExit('Отсутсует подключение к верверу...')
 
     print('Программа выполнена!')
-    print('Время выполнения программы - %s секунд.' % round((time.time() - start_time), 2))
+    print('Время выполнения программы - %s секунд(ы).' % round((time.time() - start_time), 2))
 
 
 main()
