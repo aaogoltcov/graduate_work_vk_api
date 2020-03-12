@@ -1,5 +1,4 @@
 import json
-import sys
 import time
 import requests
 from termcolor import colored
@@ -105,8 +104,8 @@ class User:
 
         # Приведение полученной информации к списку со словарем
         group_info_list = list()
-        for response in groups_info[0]:
-            response = {'gid': response['id'], 'name': response['name'], 'members_count': response['members_count']}
+        for response in groups_info:
+            response = {'gid': response[0]['id'], 'name': response[0]['name'], 'members_count': response[0]['members_count']}
             group_info_list.append(response)
         self.group_name = group_info_list
         return self.group_name
@@ -181,8 +180,8 @@ def main():
     URL = "https://api.vk.com/method/execute?"
     try:
         access_token = '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1'
-        # person = str(input(colored('Введите ID пользователя (например, 171691064 или eshmargunov): ', 'blue')))
-        person = '171691064'
+        person = str(input(colored('Введите ID пользователя (например, 171691064 или eshmargunov): ', 'blue')))
+        # person = '171691064'
         start_time = time.time()
         # Вычисление user_id и проверка доступнуости пользователя
         try:
