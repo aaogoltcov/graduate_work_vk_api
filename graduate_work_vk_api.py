@@ -63,44 +63,8 @@ class User:
                 raise SystemExit('-> Описание ошибки смотри выше!')
         else:
             friends_list = friends_list['response']['items']
-            self.items_list = friends_list
-
-            # Получение списка друзей и количества групп для друзей
-            print('1. Начинаем получать информацию о друзьях пользователя: ')
-            self.source_code = "{'user_id': person, 'groups_count': API.groups.get({'user_id': person}).count}"
-            friends_groups_count = self.code_request()
-
-            # Разделение списка друзей на списки с суммарным количеством групп не более 1000
-            self.friends_groups_list = list()
-            for items in friends_groups_count:
-                self.friends_groups_list.append(items['user_id'])
-
-            # Разделение списка друзей на списки с суммарным количеством групп не более 1000
-            # groups_count = 0
-            # group_list = list()
-            # group_list_none = list()
-            # self.friends_groups_list = list()
-            # for items in friends_groups_count:
-            #     if items['groups_count'] == None:
-            #         self.friends_groups_list.append(items['user_id'])
-            #     else:
-            #         groups_count = groups_count + items['groups_count']
-            #         if groups_count > 1000:
-            #             self.friends_groups_list.append(group_list)
-            #             group_list = list()
-            #             groups_count = items['groups_count']
-            #         group_list.append(items['user_id'])
-            # self.friends_groups_list.append(group_list)
-            print(self.friends_groups_list)
-            # self.friends_groups_list.append(group_list_none)
-            # print(self.friends_groups_list)
-
-        return print(
-            colored('2. Доступ к пользователю получен, получена информация о группах друзей пользователя.', 'green')), \
-               print(colored(
-                   f'3. Друзья разделены на {len(self.friends_groups_list)} кластеров, из расчета не более 1000 ответов в одном запросе, делаем запрос групп...',
-                   'green')), \
-               self.friends_groups_list
+            self.friends_groups_list = friends_list
+        return print(colored('1. Доступ к пользователю получен, начинаем получать информацию по группам:', 'green')), self.friends_groups_list
 
     def person_friends_groups_getting(self):
         try:
@@ -116,9 +80,10 @@ class User:
                     for item in items:
                         self.friends_groups.append(item)
             self.friends_groups = set(self.friends_groups)
-            print(colored(f'4. Получено множество из {len(self.friends_groups)} групп друзей пользователя.', 'green'))
+            print(colored(f'2. Получено множество из {len(self.friends_groups)} групп друзей пользователя.', 'green'))
 
             # Получение групп пользователя
+            time.sleep(0.5)
             get_friends_groups_code = {
                 "code": "return API.groups.get({'user_id': %d, 'count': 1000}).items;" % self.user_id,
                 'access_token': self.access_token,
@@ -127,7 +92,7 @@ class User:
             }
             response = requests.post(url=self.URL, data=get_friends_groups_code).json()
             self.person_groups = set(response['response'])
-            print(colored(f'5. Получено множество из {len(self.person_groups)} групп пользователя.', 'green'))
+            print(colored(f'3. Получено множество из {len(self.person_groups)} групп пользователя.', 'green'))
             return self.person_groups, self.friends_groups
         except TypeError:
             raise SystemExit('У пользователя нет групп!')
@@ -162,7 +127,8 @@ class User:
                 response = requests.post(url=self.URL, data=code).json()
                 if response.keys() == {'error'}:
                     if response['error']['error_code'] == 6:
-                        # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
+                        # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю
+                        # запрос снова...', 'red'))
                         pass
                         while response.keys() == {'error'} and response['error'][
                             'error_code'] == 6:
@@ -190,7 +156,8 @@ class User:
             response = requests.post(url=self.URL, data=code).json()
             if response.keys() == {'error'}:
                 if response['error']['error_code'] == 6:
-                    # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю запрос снова...', 'red'))
+                    # print(colored('-> Слишком много запросов в секунду, подбираю подходящий time.sleep и делаю
+                    # запрос снова...', 'red'))
                     while response.keys() == {'error'} and response['error'][
                         'error_code'] == 6:
                         self.time_sleep += 0.4
@@ -244,12 +211,11 @@ def main():
         friends_groups = groups.friends_groups
         final_set_of_absent_groups = person_groups.difference(friends_groups)
         final_set_of_together_groups = person_groups.intersection(friends_groups)
-        print(colored('6. Вычислили пересечение групп для пользователя и его друзей:', 'green'))
+        print(colored('4. Вычислили пересечение групп для пользователя и его друзей:', 'green'))
         print(f'-> {len(final_set_of_absent_groups)} групп, в которых нет друзей пользователя')
         print(f'-> {len(final_set_of_together_groups)} групп, в которых есть друзья пользователя')
         print('Время выполнения до записи файлов - %s секунд(ы).' % round((time.time() - start_time), 2))
 
-        data_for_file_absent = list()
         if len(final_set_of_absent_groups) > 0:
             print(colored('1-й файл - Записываем JSON файл с группами пользотвателя, в которых не состоят его друзья: ',
                           'blue'))
@@ -262,7 +228,6 @@ def main():
             print(colored('1-й файл - Нечего записывать, у пользователя нет групп, в которых не состоят его друзья!',
                           'red'))
 
-        data_for_file_together = list()
         if len(final_set_of_together_groups) > 0:
             print(colored('2-й файл - Записываем JSON файл с группами пользотвателя, в которых состоят его друзья: ',
                           'blue'))
